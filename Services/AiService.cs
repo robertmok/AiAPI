@@ -80,9 +80,8 @@ namespace AiAPI.Services
                 {
                     Console.Write(update.Content);
                     sb.Append(update.Content);
-                    yield return update;
                 }
-                //sb.Append(update.Content);
+                yield return update;
             }
             chatHistory.AddAssistantMessage(sb.ToString());
         }

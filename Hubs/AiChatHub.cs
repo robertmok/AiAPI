@@ -3,6 +3,7 @@ using AiAPI.Services;
 using Azure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.SemanticKernel;
 using Newtonsoft.Json;
 using System.Threading;
 using static AiAPI.Services.ChatHistoryService;
@@ -39,6 +40,17 @@ public class AiChatHub : Hub
                 System.Diagnostics.Debug.WriteLine(response);
                 await Clients.All.SendAsync("ReceiveAiMessage", response);
             }
+        }
+    }
+
+    public async Task SendAiMessageLmStudio(string prompt)
+    {
+        var aiMessage = controller.PostStreamChatCompletionAsync(prompt);
+
+        await foreach (StreamingChatMessageContent response in aiMessage)
+        {
+            System.Diagnostics.Debug.WriteLine(response);
+            await Clients.All.SendAsync("ReceiveAiMessageLmStudio", response);
         }
     }
 }
