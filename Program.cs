@@ -13,7 +13,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHttpLogging(o => { });
 
 builder.Services.AddSingleton<IChatHistoryService, ChatHistoryService>();
-//builder.Services.AddSingleton<IAiService, AiService>();
+builder.Services.AddSingleton<IAiService, AiService>();
 
 builder.Services.AddSignalR();
 

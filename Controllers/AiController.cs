@@ -1,8 +1,11 @@
 ﻿using AiAPI.Services;
 using Azure.AI.OpenAI;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Newtonsoft.Json;
 using RestSharp;
+using System;
 using System.Runtime.CompilerServices;
 using System.Text;
 using static AiAPI.Services.ChatHistoryService;
@@ -25,6 +28,40 @@ namespace AiAPI.Controllers
 
     }
 
+    public class OpenAiRequest
+    {
+        public required List<Message> messages { get; set; }
+        public required double temperature = 0.7;
+        public required int max_token = 1000;
+        public required bool stream { get; set; }
+    }
+
+   /* public class OpenAiResponse
+    {
+        public 
+        {
+    "id": "chatcmpl-b1nibm4y29vzpijrnbstb",
+    "object": "chat.completion",
+    "created": 1710250908,
+    "model": "C:\\Users\\rmok\\.cache\\lm-studio\\models\\TheBloke\\phi-2-GGUF\\phi-2.Q4_0.gguf",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "Hi, my name is Sarah and I am a high school student in the United States.\n"
+            },
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+    "prompt_tokens": 21,
+        "completion_tokens": 19,
+        "total_tokens": 40
+    }
+}
+    }*/
+
     [Route("api/[controller]")]
     [ApiController]
     [Produces("application/json")]
@@ -36,14 +73,20 @@ namespace AiAPI.Controllers
         private string llmHost;
         private RestClientOptions options;
         private HttpClient _client;
+        private IAiService AiService;
 
-        public AiController(IConfiguration configuration, IChatHistoryService chatHistoryService)
+        public AiController(
+            IConfiguration configuration, 
+            IChatHistoryService chatHistoryService, 
+            IAiService aiService
+        )
         {
             Configuration = configuration;
             ChatHistoryService = chatHistoryService;
+            AiService = aiService;
 
             llmModel = Configuration["llmModel"] ?? "gemma:2b";
-            llmHost = Configuration["llmHost"] ?? "http://localhost:11434";
+            llmHost = Configuration["llmHost"] ?? "http://localhost:1234";
             System.Diagnostics.Debug.WriteLine(">>> " + llmModel);
             System.Diagnostics.Debug.WriteLine(">>> " + llmHost);
 
@@ -155,6 +198,22 @@ namespace AiAPI.Controllers
             }
 
             return Array.Empty<ChatResponse>(); //new ChatResponse();
+        }
+
+        [HttpPost("postChatCompletion")]
+        public async Task<OpenAIChatMessageContent?> PostChatCompletionAsync(string prompt)
+        {
+            return await AiService.PromptAsync(prompt);
+        }
+
+        [HttpPost("postStreamChatCompletion")]
+        public async IAsyncEnumerable<StreamingChatMessageContent> PostStreamChatCompletionAsync(string prompt)
+        {
+            await foreach (var content in AiService.PromptStreamAsync(prompt))
+            {
+                yield return content;
+            }
+            
         }
     }
 }
